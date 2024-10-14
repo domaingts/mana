@@ -17,7 +17,7 @@ func NewDdnsGoCommand() *cobra.Command {
 	command := &cobra.Command{
 		Use: cmd,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			cfg.SetBinaryPath("./")
+			cfg.SetBinaryPath("/usr/local/bin")
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cfg.Run(); err != nil {
