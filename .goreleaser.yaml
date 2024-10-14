@@ -1,0 +1,23 @@
+project_name: mana
+
+version: 2
+
+builds:
+  - id: universal
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+    goarch:
+      - amd64
+    goamd64: 
+      - v3
+      - v2
+    main: ./
+    binary: mana
+
+archives:
+  - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}-{{ .Amd64 }}"
+    format: tar.gz
