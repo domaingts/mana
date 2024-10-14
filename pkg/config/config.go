@@ -114,7 +114,7 @@ func (c *Config) untarTargetFile(in io.Reader) error {
 		}
 		if header.Name == c.cmd {
 			target := path.Join(c.binaryPath, c.cmd)
-			outfile, err := os.Create(target)
+			outfile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
 			if err != nil {
 				return err
 			}
