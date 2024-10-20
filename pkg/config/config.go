@@ -16,12 +16,17 @@ import (
 	"golang.org/x/net/http2"
 )
 
+var (
+	defaultServicePath = "/etc/systemd/system"
+)
+
 type Config struct {
 	user       string
 	repo       string
 	cmd        string
 	path       string
 	binaryPath string
+	configPath string
 	client     *http.Client
 	canceled   bool
 }
@@ -34,8 +39,56 @@ func NewConfig(cmd, user, repo string) *Config {
 	}
 }
 
+func (c *Config) InitConfig() {
+	_, err := os.Stat(c.configPath)
+	if err != nil && os.IsNotExist(err) {
+		err = os.Mkdir(c.configPath, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func (c *Config) SetBinaryPath(path string) {
 	c.binaryPath = path
+}
+
+func (c *Config) SetConfigPath(path string) {
+	c.configPath = path
+}
+
+func (c *Config) CreateService(input []byte) error {
+	path := fmt.Sprintf("%s/%s.service", defaultServicePath, c.cmd)
+	_, err := os.Stat(path)
+	if err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	file.Chmod(0755)
+	_, err = file.Write(input)
+	return err
+}
+
+func (c *Config) CreateStartConfig(input []byte) error {
+	path := fmt.Sprintf("%s/%s", c.configPath, "config.yaml")
+	_, err := os.Stat(path)
+	if err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	file.Chmod(0755)
+	_, err = file.Write(input)
+	return err
 }
 
 func (c *Config) Run() error {
@@ -114,7 +167,8 @@ func (c *Config) untarTargetFile(in io.Reader) error {
 		}
 		if header.Name == c.cmd {
 			target := path.Join(c.binaryPath, c.cmd)
-			outfile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
+			fmt.Println(header.Mode)
+			outfile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0755)
 			if err != nil {
 				return err
 			}
